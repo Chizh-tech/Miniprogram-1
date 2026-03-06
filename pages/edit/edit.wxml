@@ -1,0 +1,136 @@
+<view class="page">
+  <!-- 日期和天气位置信息头部 -->
+  <view class="header-info card">
+    <view class="date-row">
+      <text class="date-text">{{dateDisplay}}</text>
+    </view>
+    <view class="meta-row">
+      <!-- 天气 -->
+      <view class="meta-item" bindtap="refreshLocationWeather">
+        <block wx:if="{{isLoadingWeather}}">
+          <text class="meta-loading">⏳ 获取天气中...</text>
+        </block>
+        <block wx:elif="{{weather}}">
+          <text class="meta-value">{{weather.icon}} {{weather.text}} {{weather.temperature}}°C</text>
+        </block>
+        <block wx:else>
+          <text class="meta-placeholder">🌤️ 点击获取天气</text>
+        </block>
+      </view>
+
+      <!-- 位置 -->
+      <view class="meta-item" bindtap="refreshLocationWeather">
+        <block wx:if="{{isLoadingLocation}}">
+          <text class="meta-loading">⏳ 获取位置中...</text>
+        </block>
+        <block wx:elif="{{location}}">
+          <text class="meta-value">📍 {{location.name}}</text>
+        </block>
+        <block wx:else>
+          <text class="meta-placeholder">📍 点击获取位置</text>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 标题输入 -->
+  <view class="input-section card">
+    <input
+      class="title-input"
+      placeholder="标题（选填）"
+      placeholder-style="color: #ccc;"
+      value="{{title}}"
+      bindinput="onTitleInput"
+      maxlength="50"
+    />
+    <view class="divider"></view>
+    <!-- 正文输入 -->
+    <textarea
+      class="content-input"
+      placeholder="记录今天的心情和故事..."
+      placeholder-style="color: #ccc;"
+      value="{{content}}"
+      bindinput="onContentInput"
+      auto-height
+      show-confirm-bar="{{false}}"
+      adjust-position="{{true}}"
+    />
+  </view>
+
+  <!-- 图片区域 -->
+  <view class="media-section card">
+    <view class="media-header">
+      <text class="media-title">📷 图片</text>
+      <text class="media-count">{{images.length}}/9</text>
+    </view>
+    <view class="media-grid">
+      <!-- 已选图片 -->
+      <view
+        wx:for="{{images}}"
+        wx:key="index"
+        class="media-item"
+      >
+        <image
+          class="media-thumb"
+          src="{{item}}"
+          mode="aspectFill"
+          bindtap="previewImage"
+          data-index="{{index}}"
+        />
+        <view class="media-delete" catchtap="deleteImage" data-index="{{index}}">×</view>
+      </view>
+
+      <!-- 添加图片按钮 -->
+      <view
+        class="media-add"
+        bindtap="chooseImages"
+        wx:if="{{images.length < 9}}"
+      >
+        <text class="media-add-icon">+</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 视频区域 -->
+  <view class="media-section card">
+    <view class="media-header">
+      <text class="media-title">🎬 视频</text>
+      <text class="media-count">{{videos.length}}/3</text>
+    </view>
+    <view class="media-grid">
+      <!-- 已选视频 -->
+      <view
+        wx:for="{{videos}}"
+        wx:key="index"
+        class="media-item"
+      >
+        <video
+          class="media-thumb video-thumb"
+          src="{{item}}"
+          show-play-btn="{{true}}"
+          object-fit="cover"
+          enable-play-gesture="{{true}}"
+        />
+        <view class="media-delete" catchtap="deleteVideo" data-index="{{index}}">×</view>
+      </view>
+
+      <!-- 添加视频按钮 -->
+      <view
+        class="media-add"
+        bindtap="chooseVideo"
+        wx:if="{{videos.length < 3}}"
+      >
+        <text class="media-add-icon">+</text>
+        <text class="media-add-hint">添加视频</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions">
+    <view class="btn-cancel" bindtap="onBack">取消</view>
+    <view class="btn-save {{isSaving ? 'disabled' : ''}}" bindtap="saveDiary">
+      {{isSaving ? '保存中...' : '保存日记'}}
+    </view>
+  </view>
+</view>

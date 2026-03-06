@@ -1,0 +1,81 @@
+<view class="page" wx:if="{{diary}}">
+  <!-- 头部：日期、天气、位置 -->
+  <view class="hero-header">
+    <view class="hero-date">
+      <text class="hero-date-text">{{dateDisplay}}</text>
+    </view>
+    <view class="hero-meta">
+      <view class="meta-chip" wx:if="{{diary.weather}}">
+        <text>{{diary.weather.icon}} {{diary.weather.text}} {{diary.weather.temperature}}°C</text>
+      </view>
+      <view class="meta-chip" wx:if="{{diary.location}}">
+        <text>📍 {{diary.location.name}}</text>
+      </view>
+    </view>
+    <view class="hero-time" wx:if="{{diary.createdAt}}">
+      <text>创建于 {{diary.createdAt}}</text>
+      <text wx:if="{{diary.updatedAt && diary.updatedAt !== diary.createdAt}}">更新于 {{diary.updatedAt}}</text>
+    </view>
+  </view>
+
+  <!-- 日记内容 -->
+  <view class="content-section card">
+    <text class="diary-title" wx:if="{{diary.title}}">{{diary.title}}</text>
+    <text class="diary-content">{{diary.content || '（没有文字内容）'}}</text>
+  </view>
+
+  <!-- 图片区域 -->
+  <view class="media-section card" wx:if="{{diary.images && diary.images.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">📷 图片（{{diary.images.length}}）</text>
+    </view>
+    <view class="image-grid">
+      <image
+        wx:for="{{diary.images}}"
+        wx:key="index"
+        class="image-item {{diary.images.length === 1 ? 'single' : ''}}"
+        src="{{item}}"
+        mode="aspectFill"
+        bindtap="previewImage"
+        data-index="{{index}}"
+      />
+    </view>
+  </view>
+
+  <!-- 视频区域 -->
+  <view class="media-section card" wx:if="{{diary.videos && diary.videos.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">🎬 视频（{{diary.videos.length}}）</text>
+    </view>
+    <view class="video-list">
+      <view wx:for="{{diary.videos}}" wx:key="index" class="video-item">
+        <video
+          class="video-player"
+          src="{{item}}"
+          controls="{{true}}"
+          show-play-btn="{{true}}"
+          object-fit="contain"
+          enable-play-gesture="{{true}}"
+          title="视频 {{index + 1}}"
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作 -->
+  <view class="bottom-actions">
+    <view class="action-btn btn-share" bindtap="onShareTap">
+      <text>📋 复制</text>
+    </view>
+    <view class="action-btn btn-edit" bindtap="editDiary">
+      <text>✏️ 编辑</text>
+    </view>
+    <view class="action-btn btn-delete" bindtap="deleteDiary">
+      <text>🗑️ 删除</text>
+    </view>
+  </view>
+</view>
+
+<view wx:else class="loading-state">
+  <text>加载中...</text>
+</view>
