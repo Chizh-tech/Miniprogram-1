@@ -1,0 +1,113 @@
+<view class="page">
+  <!-- 顶部工具栏 -->
+  <view class="toolbar">
+    <view class="view-tabs">
+      <view
+        class="tab-item {{viewMode === 'calendar' ? 'active' : ''}}"
+        bindtap="switchView"
+        data-mode="calendar"
+      >
+        <text>📅 日历</text>
+      </view>
+      <view
+        class="tab-item {{viewMode === 'list' ? 'active' : ''}}"
+        bindtap="switchView"
+        data-mode="list"
+      >
+        <text>📋 列表</text>
+      </view>
+    </view>
+    <view class="create-btn" bindtap="onCreateTap">
+      <text>✏️ 写日记</text>
+    </view>
+  </view>
+
+  <!-- 日历视图 -->
+  <view class="calendar-container card" wx:if="{{viewMode === 'calendar'}}">
+    <!-- 月份导航 -->
+    <view class="month-nav">
+      <view class="nav-arrow" bindtap="prevMonth">‹</view>
+      <view class="month-title">
+        <text>{{monthName}}</text>
+        <text class="today-btn" bindtap="goToday">今天</text>
+      </view>
+      <view class="nav-arrow" bindtap="nextMonth">›</view>
+    </view>
+
+    <!-- 星期表头 -->
+    <view class="week-header">
+      <view class="week-cell" wx:for="{{weekHeaders}}" wx:key="index">{{item}}</view>
+    </view>
+
+    <!-- 日期格子 -->
+    <view class="days-grid">
+      <view
+        wx:for="{{calendarDays}}"
+        wx:key="index"
+        class="day-cell {{item.empty ? 'empty' : ''}} {{item.isToday ? 'today' : ''}} {{item.isSelected ? 'selected' : ''}} {{item.hasDiary ? 'has-diary' : ''}}"
+        bindtap="onDayTap"
+        data-date-str="{{item.dateStr}}"
+        data-empty="{{item.empty}}"
+      >
+        <text class="day-num">{{item.day}}</text>
+        <view class="diary-dot" wx:if="{{item.hasDiary && !item.isSelected}}"></view>
+      </view>
+    </view>
+
+    <!-- 当月日记数量 -->
+    <view class="month-summary">
+      <text>本月共 {{diaryList.length}} 篇日记</text>
+    </view>
+  </view>
+
+  <!-- 日记列表（日历下方或列表视图） -->
+  <view class="diary-section">
+    <view wx:if="{{viewMode === 'calendar'}}">
+      <view class="section-label" wx:if="{{diaryList.length > 0}}">本月日记</view>
+    </view>
+    <view wx:else>
+      <view class="section-label">全部日记</view>
+    </view>
+
+    <!-- 日记卡片列表 -->
+    <block wx:if="{{diaryList.length > 0}}">
+      <view
+        wx:for="{{diaryList}}"
+        wx:key="date"
+        class="diary-card card"
+        bindtap="onDiaryItemTap"
+        data-date="{{item.date}}"
+      >
+        <view class="diary-card-header">
+          <view class="diary-date-badge">
+            <text class="diary-day">{{item.dayNum}}</text>
+            <text class="diary-month-year">{{item.monthYear}}</text>
+          </view>
+          <view class="diary-meta">
+            <text class="diary-title">{{item.title || '无标题'}}</text>
+            <view class="diary-tags">
+              <text class="tag" wx:if="{{item.weather}}">{{item.weather.icon}} {{item.weather.text}} {{item.weather.temperature}}°C</text>
+              <text class="tag" wx:if="{{item.location}}">📍 {{item.location.name}}</text>
+            </view>
+          </view>
+          <text class="diary-arrow">›</text>
+        </view>
+        <text class="diary-preview">{{item.content}}</text>
+        <view class="diary-media-hint" wx:if="{{item.images.length > 0 || item.videos.length > 0}}">
+          <text wx:if="{{item.images.length > 0}}">🖼️ {{item.images.length}}张图片</text>
+          <text wx:if="{{item.videos.length > 0}}">🎬 {{item.videos.length}}段视频</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:elif="{{viewMode === 'list'}}">
+      <text class="empty-icon">📖</text>
+      <text>还没有日记，开始记录吧！</text>
+      <view class="btn-primary empty-create-btn" bindtap="onCreateTap">写第一篇日记</view>
+    </view>
+    <view class="empty-state-small" wx:else>
+      <text>本月暂无日记</text>
+    </view>
+  </view>
+</view>
