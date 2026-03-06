@@ -31,11 +31,11 @@
     "packNpmRelationList": [],
     "minifyWXSS": true,
     "showES6CompileOption": false,
-    "minifyWXML": false
+    "minifyWXML": true
   },
   "compileType": "miniprogram",
   "libVersion": "2.25.0",
-  "appid": "wx_placeholder_appid",
+  "appid": "wx77cebe950a623eb5",
   "projectname": "diary-miniprogram",
   "condition": {},
   "editorSetting": {
