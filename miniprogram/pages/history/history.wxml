@@ -1,0 +1,31 @@
+<view class="container">
+  <view class="header">📜 往事回顾</view>
+
+  <view wx:if="{{diaries.length === 0}}" class="empty-tip">
+    还没有记录过日记哦，快去写一篇吧！
+  </view>
+
+  <block wx:for="{{diaries}}" wx:key="_id">
+    <view class="diary-card">
+      <view class="delete-btn" bindtap="deleteDiary" data-id="{{item._id}}">🗑️ 删除</view>
+      
+      <view class="card-time">{{item.formattedTime}}</view>
+      <view class="card-content">{{item.content}}</view>
+      
+      <image 
+        wx:if="{{item.mediaPath}}" 
+        src="{{item.mediaPath}}" 
+        mode="aspectFill" 
+        class="card-img"
+        bindtap="previewImage"
+        data-url="{{item.mediaPath}}"
+      ></image>
+    </view>
+  </block>
+
+  <view class="nav-container">
+    <navigator open-type="reLaunch" url="/pages/index/index" class="back-link">
+      ⬅️ 回到主页面
+    </navigator>
+  </view>
+</view>
