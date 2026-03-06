@@ -43,7 +43,13 @@ function getCurrentLocation() {
           });
       },
       fail(err) {
-        reject(err);
+        const errMsg = (err && err.errMsg) || '';
+        const isAuthDenied = errMsg.includes('auth deny') || errMsg.includes('authorize no response');
+        reject({
+          type: isAuthDenied ? 'AUTH_DENIED' : 'LOCATION_FAILED',
+          message: isAuthDenied ? '位置权限未开启' : '定位失败',
+          raw: err
+        });
       }
     });
   });

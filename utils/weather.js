@@ -65,10 +65,10 @@ function translateWeatherDesc(desc) {
  * @returns {Promise<Object>}
  */
 function getWeather(latitude, longitude) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!config.WEATHER_API_KEY) {
-      // 未配置 API Key 时返回模拟数据
-      resolve(getMockWeather());
+      // 未配置 API Key 时返回明确提示
+      resolve(getMockWeather('未配置天气 Key'));
       return;
     }
 
@@ -82,7 +82,7 @@ function getWeather(latitude, longitude) {
         lang: 'zh_cn'
       },
       success(res) {
-        if (res.statusCode === 200 && res.data) {
+        if (res.statusCode === 200 && res.data && res.data.weather && res.data.main) {
           const data = res.data;
           const weatherItem = data.weather[0];
           const icon = WEATHER_ICON_MAP[weatherItem.icon] || '🌤️';
@@ -95,11 +95,17 @@ function getWeather(latitude, longitude) {
             windSpeed: data.wind ? data.wind.speed : 0
           });
         } else {
-          resolve(getMockWeather());
+          let reason = '天气服务异常';
+          if (res.statusCode === 401) {
+            reason = '天气 Key 无效';
+          } else if (res.statusCode === 403) {
+            reason = '天气服务拒绝访问';
+          }
+          resolve(getMockWeather(reason));
         }
       },
       fail() {
-        resolve(getMockWeather());
+        resolve(getMockWeather('天气请求网络失败'));
       }
     });
   });
@@ -109,9 +115,9 @@ function getWeather(latitude, longitude) {
  * 返回模拟天气数据（当 API Key 未配置时使用）
  * @returns {Object}
  */
-function getMockWeather() {
+function getMockWeather(reason) {
   return {
-    text: '天气获取失败',
+    text: reason || '天气获取失败',
     temperature: '--',
     icon: '🌤️',
     humidity: '--',

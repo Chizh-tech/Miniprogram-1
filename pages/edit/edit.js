@@ -39,6 +39,11 @@ Page({
         weather: existing.weather || null,
         isExistingDiary: true
       });
+
+      // 历史日记缺少位置/天气信息时自动补拉一次
+      if (!existing.location || !existing.weather) {
+        this.autoFetchLocationAndWeather();
+      }
     } else {
       // 新建模式，自动获取位置和天气
       this.autoFetchLocationAndWeather();
@@ -65,10 +70,27 @@ Page({
       })
       .then(weather => {
         this.setData({ weather, isLoadingWeather: false });
+        if (weather && weather.temperature === '--') {
+          wx.showToast({ title: weather.text || '天气获取失败', icon: 'none' });
+        }
       })
-      .catch(() => {
+      .catch((err) => {
         this.setData({ isLoadingLocation: false, isLoadingWeather: false });
-        wx.showToast({ title: '获取位置失败，请手动刷新', icon: 'none' });
+        if (err && err.type === 'AUTH_DENIED') {
+          wx.showModal({
+            title: '需要位置权限',
+            content: '请在设置中开启“位置信息”权限后重试。',
+            confirmText: '去设置',
+            success: (res) => {
+              if (res.confirm) {
+                wx.openSetting({});
+              }
+            }
+          });
+          return;
+        }
+
+        wx.showToast({ title: (err && err.message) || '定位失败，请重试', icon: 'none' });
       });
   },
 
