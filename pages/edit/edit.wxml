@@ -102,7 +102,7 @@
       >
         <image
           class="media-thumb"
-          src="{{item}}"
+          src="{{imagePreviewUrls[index] || item}}"
           mode="aspectFill"
           bindtap="previewImage"
           data-index="{{index}}"
@@ -136,7 +136,7 @@
       >
         <video
           class="media-thumb video-thumb"
-          src="{{item}}"
+          src="{{videoPreviewUrls[index] || item}}"
           show-play-btn="{{true}}"
           object-fit="cover"
           enable-play-gesture="{{true}}"

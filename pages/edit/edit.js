@@ -12,6 +12,8 @@ Page({
     content: '',
     images: [],
     videos: [],
+    imagePreviewUrls: [],
+    videoPreviewUrls: [],
     location: null,
     weather: null,
     isLoadingLocation: false,
@@ -71,14 +73,53 @@ Page({
         isExistingDiary: true
       });
 
+      await this.refreshMediaPreviewUrls();
+
       // 历史日记缺少位置/天气信息时自动补拉一次
       if (!existing.location || !existing.weather) {
         this.autoFetchLocationAndWeather();
       }
     } else {
       // 新建模式，自动获取位置和天气
+      this.setData({ imagePreviewUrls: [], videoPreviewUrls: [] });
       this.autoFetchLocationAndWeather();
     }
+  },
+
+  isCloudEnabled() {
+    const app = getApp();
+    return !!(wx.cloud && app && app.globalData && app.globalData.useCloudStorage);
+  },
+
+  async resolveCloudFileUrls(fileRefs) {
+    if (!Array.isArray(fileRefs) || fileRefs.length === 0) {
+      return [];
+    }
+
+    const cloudRefs = fileRefs.filter(ref => typeof ref === 'string' && ref.startsWith('cloud://'));
+    if (cloudRefs.length === 0 || !wx.cloud) {
+      return [...fileRefs];
+    }
+
+    try {
+      const res = await wx.cloud.getTempFileURL({ fileList: cloudRefs });
+      const map = {};
+      (res.fileList || []).forEach(item => {
+        if (item && item.fileID) {
+          map[item.fileID] = item.tempFileURL || item.fileID;
+        }
+      });
+
+      return fileRefs.map(ref => map[ref] || ref);
+    } catch (err) {
+      return [...fileRefs];
+    }
+  },
+
+  async refreshMediaPreviewUrls() {
+    const imagePreviewUrls = await this.resolveCloudFileUrls(this.data.images || []);
+    const videoPreviewUrls = await this.resolveCloudFileUrls(this.data.videos || []);
+    this.setData({ imagePreviewUrls, videoPreviewUrls });
   },
 
   onShow() {
@@ -239,10 +280,10 @@ Page({
       count: maxCount,
       mediaType: ['image'],
       sourceType: ['album', 'camera'],
-      success: (res) => {
+      success: async (res) => {
         const newImages = res.tempFiles.map(f => f.tempFilePath);
-        // 保存图片到本地文件系统
-        this.saveFilesToLocal(newImages, 'image');
+        // 云端模式上传后保存 fileID，本地模式保存到沙盒路径。
+        await this.addMediaFiles(newImages, 'image');
       },
       fail: () => {}
     });
@@ -263,12 +304,73 @@ Page({
       mediaType: ['video'],
       sourceType: ['album', 'camera'],
       maxDuration: 60,
-      success: (res) => {
+      success: async (res) => {
         const tempPath = res.tempFiles[0].tempFilePath;
-        this.saveFilesToLocal([tempPath], 'video');
+        await this.addMediaFiles([tempPath], 'video');
       },
       fail: () => {}
     });
+  },
+
+  /**
+   * 添加媒体文件：云端模式上传为 fileID，本地模式存到本地文件。
+   * @param {string[]} tempPaths
+   * @param {'image'|'video'} type
+   */
+  async addMediaFiles(tempPaths, type) {
+    if (this.isCloudEnabled()) {
+      await this.uploadMediaToCloud(tempPaths, type);
+      return;
+    }
+
+    this.saveFilesToLocal(tempPaths, type);
+  },
+
+  /**
+   * 上传媒体到云存储并写入 fileID。
+   * @param {string[]} tempPaths
+   * @param {'image'|'video'} type
+   */
+  async uploadMediaToCloud(tempPaths, type) {
+    if (!tempPaths || tempPaths.length === 0) return;
+
+    wx.showLoading({ title: '上传中...' });
+    const date = this.data.date || util.formatDate(new Date());
+
+    try {
+      const uploadTasks = tempPaths.map(async tempPath => {
+        const ext = type === 'image' ? '.jpg' : '.mp4';
+        const cloudPath = `diary-media/${date}/${util.generateId()}${ext}`;
+        const uploadRes = await wx.cloud.uploadFile({
+          cloudPath,
+          filePath: tempPath
+        });
+        return {
+          ref: uploadRes.fileID,
+          previewUrl: tempPath
+        };
+      });
+
+      const uploaded = await Promise.all(uploadTasks);
+      const refs = uploaded.map(item => item.ref);
+      const previews = uploaded.map(item => item.previewUrl);
+
+      if (type === 'image') {
+        this.setData({
+          images: [...this.data.images, ...refs],
+          imagePreviewUrls: [...this.data.imagePreviewUrls, ...previews]
+        });
+      } else {
+        this.setData({
+          videos: [...this.data.videos, ...refs],
+          videoPreviewUrls: [...this.data.videoPreviewUrls, ...previews]
+        });
+      }
+    } catch (err) {
+      wx.showToast({ title: '上传失败，请重试', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
   },
 
   /**
@@ -296,9 +398,15 @@ Page({
           if (completed === tempPaths.length) {
             wx.hideLoading();
             if (type === 'image') {
-              this.setData({ images: [...this.data.images, ...savedPaths] });
+              this.setData({
+                images: [...this.data.images, ...savedPaths],
+                imagePreviewUrls: [...this.data.imagePreviewUrls, ...savedPaths]
+              });
             } else {
-              this.setData({ videos: [...this.data.videos, ...savedPaths] });
+              this.setData({
+                videos: [...this.data.videos, ...savedPaths],
+                videoPreviewUrls: [...this.data.videoPreviewUrls, ...savedPaths]
+              });
             }
           }
         },
@@ -309,9 +417,15 @@ Page({
           if (completed === tempPaths.length) {
             wx.hideLoading();
             if (type === 'image') {
-              this.setData({ images: [...this.data.images, ...savedPaths] });
+              this.setData({
+                images: [...this.data.images, ...savedPaths],
+                imagePreviewUrls: [...this.data.imagePreviewUrls, ...savedPaths]
+              });
             } else {
-              this.setData({ videos: [...this.data.videos, ...savedPaths] });
+              this.setData({
+                videos: [...this.data.videos, ...savedPaths],
+                videoPreviewUrls: [...this.data.videoPreviewUrls, ...savedPaths]
+              });
             }
           }
         }
@@ -324,10 +438,10 @@ Page({
    */
   previewImage(e) {
     const { index } = e.currentTarget.dataset;
-    const { images } = this.data;
+    const { imagePreviewUrls } = this.data;
     wx.previewImage({
-      urls: images,
-      current: images[index]
+      urls: imagePreviewUrls,
+      current: imagePreviewUrls[index]
     });
   },
 
@@ -342,8 +456,10 @@ Page({
       success: (res) => {
         if (res.confirm) {
           const images = [...this.data.images];
+          const imagePreviewUrls = [...this.data.imagePreviewUrls];
           images.splice(index, 1);
-          this.setData({ images });
+          imagePreviewUrls.splice(index, 1);
+          this.setData({ images, imagePreviewUrls });
         }
       }
     });
@@ -360,8 +476,10 @@ Page({
       success: (res) => {
         if (res.confirm) {
           const videos = [...this.data.videos];
+          const videoPreviewUrls = [...this.data.videoPreviewUrls];
           videos.splice(index, 1);
-          this.setData({ videos });
+          videoPreviewUrls.splice(index, 1);
+          this.setData({ videos, videoPreviewUrls });
         }
       }
     });

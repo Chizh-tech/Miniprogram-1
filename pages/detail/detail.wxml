@@ -27,13 +27,13 @@
   <!-- 图片区域 -->
   <view class="media-section card" wx:if="{{diary.images && diary.images.length > 0}}">
     <view class="section-header">
-      <text class="section-title">📷 图片（{{diary.images.length}}）</text>
+      <text class="section-title">📷 图片（{{imagePreviewUrls.length}}）</text>
     </view>
     <view class="image-grid">
       <image
-        wx:for="{{diary.images}}"
+        wx:for="{{imagePreviewUrls}}"
         wx:key="index"
-        class="image-item {{diary.images.length === 1 ? 'single' : ''}}"
+        class="image-item {{imagePreviewUrls.length === 1 ? 'single' : ''}}"
         src="{{item}}"
         mode="aspectFill"
         bindtap="previewImage"
@@ -45,10 +45,10 @@
   <!-- 视频区域 -->
   <view class="media-section card" wx:if="{{diary.videos && diary.videos.length > 0}}">
     <view class="section-header">
-      <text class="section-title">🎬 视频（{{diary.videos.length}}）</text>
+      <text class="section-title">🎬 视频（{{videoPreviewUrls.length}}）</text>
     </view>
     <view class="video-list">
-      <view wx:for="{{diary.videos}}" wx:key="index" class="video-item">
+      <view wx:for="{{videoPreviewUrls}}" wx:key="index" class="video-item">
         <video
           class="video-player"
           src="{{item}}"

@@ -6,7 +6,9 @@ Page({
     diary: null,
     date: '',
     dateDisplay: '',
-    currentVideoIndex: -1
+    currentVideoIndex: -1,
+    imagePreviewUrls: [],
+    videoPreviewUrls: []
   },
 
   async onLoad(options) {
@@ -36,7 +38,35 @@ Page({
 
     wx.setNavigationBarTitle({ title: diary.title || '日记详情' });
 
-    this.setData({ diary, dateDisplay });
+    const imagePreviewUrls = await this.resolveFileUrls(diary.images || []);
+    const videoPreviewUrls = await this.resolveFileUrls(diary.videos || []);
+
+    this.setData({ diary, dateDisplay, imagePreviewUrls, videoPreviewUrls });
+  },
+
+  async resolveFileUrls(fileRefs) {
+    if (!Array.isArray(fileRefs) || fileRefs.length === 0) {
+      return [];
+    }
+
+    const cloudRefs = fileRefs.filter(ref => typeof ref === 'string' && ref.startsWith('cloud://'));
+    if (cloudRefs.length === 0 || !wx.cloud) {
+      return [...fileRefs];
+    }
+
+    try {
+      const res = await wx.cloud.getTempFileURL({ fileList: cloudRefs });
+      const urlMap = {};
+      (res.fileList || []).forEach(item => {
+        if (item && item.fileID) {
+          urlMap[item.fileID] = item.tempFileURL || item.fileID;
+        }
+      });
+
+      return fileRefs.map(ref => urlMap[ref] || ref);
+    } catch (err) {
+      return [...fileRefs];
+    }
   },
 
   /**
@@ -44,10 +74,10 @@ Page({
    */
   previewImage(e) {
     const { index } = e.currentTarget.dataset;
-    const { diary } = this.data;
+    const { imagePreviewUrls } = this.data;
     wx.previewImage({
-      urls: diary.images,
-      current: diary.images[index]
+      urls: imagePreviewUrls,
+      current: imagePreviewUrls[index]
     });
   },
 
@@ -75,6 +105,7 @@ Page({
         if (res.confirm) {
           const { date } = this.data;
           // 删除关联的本地文件
+          await this.deleteCloudFiles();
           this.deleteLocalFiles();
           await storage.deleteDiary(date);
           wx.showToast({ title: '已删除', icon: 'success' });
@@ -102,6 +133,27 @@ Page({
         fs.unlink({ filePath: path, fail: () => {} });
       }
     });
+  },
+
+  /**
+   * 删除云存储文件（最佳努力，不阻断主流程）。
+   */
+  async deleteCloudFiles() {
+    const { diary } = this.data;
+    if (!diary || !wx.cloud) return;
+
+    const cloudFileList = [
+      ...(diary.images || []),
+      ...(diary.videos || [])
+    ].filter(path => typeof path === 'string' && path.startsWith('cloud://'));
+
+    if (cloudFileList.length === 0) return;
+
+    try {
+      await wx.cloud.deleteFile({ fileList: cloudFileList });
+    } catch (err) {
+      // 忽略云文件清理失败，避免影响日记记录删除。
+    }
   },
 
   /**
