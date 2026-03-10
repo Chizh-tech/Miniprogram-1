@@ -54,16 +54,28 @@ async function getCloudDiaryList() {
  * @returns {Object} 以日期字符串为键的日记对象
  */
 async function getAllDiaries() {
+  const localRaw = wx.getStorageSync(STORAGE_KEY) || {};
+  const localMap = Array.isArray(localRaw)
+    ? localRaw.reduce((acc, item) => {
+      if (item && item.date) acc[item.date] = item;
+      return acc;
+    }, {})
+    : localRaw;
+
   if (isCloudEnabled()) {
     const list = await getCloudDiaryList();
-    const map = {};
+    const cloudMap = {};
     list.forEach(item => {
-      map[item.date] = item;
+      if (item && item.date) {
+        cloudMap[item.date] = item;
+      }
     });
-    return map;
+
+    // 兼容旧版本：云端优先，但保留仅存在于本地的历史日记。
+    return Object.assign({}, localMap, cloudMap);
   }
 
-  return wx.getStorageSync(STORAGE_KEY) || {};
+  return localMap;
 }
 
 /**
@@ -164,7 +176,9 @@ async function getDiaryDatesInMonth(year, month) {
  */
 async function getDiaryList() {
   const diaries = await getAllDiaries();
-  return Object.values(diaries).sort((a, b) => b.date.localeCompare(a.date));
+  return Object.values(diaries)
+    .filter(item => item && item.date)
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
 module.exports = {

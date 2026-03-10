@@ -75,14 +75,23 @@ Page({
       list = list.filter(d => d.date.startsWith(prefix));
     }
 
-    // 添加展示字段
-    list = list.map(d => {
-      const parts = d.date.split('-');
-      return Object.assign({}, d, {
-        dayNum: parts[2],
-        monthYear: `${parts[1]}/${parts[0]}`
+    // 兼容旧数据：补齐空字段，避免模板访问 undefined.length 导致渲染异常。
+    list = list
+      .filter(d => d && d.date)
+      .map(d => {
+        const parts = d.date.split('-');
+        return Object.assign({
+          title: '',
+          content: '',
+          images: [],
+          videos: [],
+          location: null,
+          weather: null
+        }, d, {
+          dayNum: parts[2] || '',
+          monthYear: (parts[0] && parts[1]) ? `${parts[1]}/${parts[0]}` : ''
+        });
       });
-    });
 
     this.setData({ diaryList: list });
   },
