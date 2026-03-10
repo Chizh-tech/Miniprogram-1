@@ -17,7 +17,31 @@ Page({
     isLoadingLocation: false,
     isLoadingWeather: false,
     isExistingDiary: false,
-    isSaving: false
+    isSaving: false,
+    showDebugPanel: false,
+    debugInfo: {
+      lastRefreshAt: '-',
+      locationPermission: '未知',
+      locationStatus: '未开始',
+      locationError: '-',
+      locationRaw: '-',
+      locationResult: '-',
+      locationGeocodeStatus: '-',
+      locationGeocodeReason: '-',
+      locationGeocodeHttp: '-',
+      locationGeocodeApiStatus: '-',
+      locationGeocodeApiMessage: '-',
+      locationGeocodeRaw: '-',
+      weatherStatus: '未开始',
+      weatherError: '-',
+      weatherResult: '-',
+      weatherHttpStatus: '-',
+      weatherApiCode: '-',
+      weatherApiMessage: '-',
+      weatherRaw: '-',
+      hasWeatherKey: false,
+      hasTencentMapKey: false
+    }
   },
 
   onLoad(options) {
@@ -25,7 +49,14 @@ Page({
     const dateObj = util.parseDate(date);
     const dateDisplay = `${date}  ${util.getWeekdayName(dateObj.getDay())}`;
 
-    this.setData({ date, dateDisplay });
+    this.setData({
+      date,
+      dateDisplay,
+      'debugInfo.hasWeatherKey': !!weatherService.__DEBUG_HAS_WEATHER_KEY__,
+      'debugInfo.hasTencentMapKey': !!locationService.__DEBUG_HAS_MAP_KEY__
+    });
+
+    this.refreshLocationPermission();
 
     // 检查是否已有该日期的日记（编辑模式）
     const existing = storage.getDiaryByDate(date);
@@ -54,28 +85,101 @@ Page({
     wx.setNavigationBarTitle({
       title: this.data.isExistingDiary ? '编辑日记' : '写日记'
     });
+
+    this.refreshLocationPermission();
+  },
+
+  toggleDebugPanel() {
+    this.setData({ showDebugPanel: !this.data.showDebugPanel });
+  },
+
+  refreshLocationPermission() {
+    wx.getSetting({
+      success: (res) => {
+        const auth = res && res.authSetting ? res.authSetting['scope.userLocation'] : undefined;
+        const permissionText = auth === true ? '已授权' : (auth === false ? '已拒绝' : '未请求');
+        this.setData({ 'debugInfo.locationPermission': permissionText });
+      },
+      fail: () => {
+        this.setData({ 'debugInfo.locationPermission': '读取失败' });
+      }
+    });
   },
 
   /**
    * 自动获取位置和天气
    */
   autoFetchLocationAndWeather() {
-    this.setData({ isLoadingLocation: true, isLoadingWeather: true });
+    const now = util.formatDateTime(new Date());
+    this.setData({
+      isLoadingLocation: true,
+      isLoadingWeather: true,
+      'debugInfo.lastRefreshAt': now,
+      'debugInfo.locationStatus': '请求中',
+      'debugInfo.locationError': '-',
+      'debugInfo.locationRaw': '-',
+      'debugInfo.locationGeocodeStatus': '-',
+      'debugInfo.locationGeocodeReason': '-',
+      'debugInfo.locationGeocodeHttp': '-',
+      'debugInfo.locationGeocodeApiStatus': '-',
+      'debugInfo.locationGeocodeApiMessage': '-',
+      'debugInfo.locationGeocodeRaw': '-',
+      'debugInfo.weatherStatus': '等待定位结果',
+      'debugInfo.weatherError': '-',
+      'debugInfo.weatherResult': '-',
+      'debugInfo.weatherHttpStatus': '-',
+      'debugInfo.weatherApiCode': '-',
+      'debugInfo.weatherApiMessage': '-',
+      'debugInfo.weatherRaw': '-'
+    });
 
     locationService.getCurrentLocation()
       .then(loc => {
-        this.setData({ location: loc, isLoadingLocation: false });
+        const geoDebug = loc && loc.geocodeDebug ? loc.geocodeDebug : {};
+        this.setData({
+          location: loc,
+          isLoadingLocation: false,
+          'debugInfo.locationStatus': '成功',
+          'debugInfo.locationResult': `${loc.latitude}, ${loc.longitude} (${loc.name})`,
+          'debugInfo.locationGeocodeStatus': geoDebug.ok ? '成功' : '失败',
+          'debugInfo.locationGeocodeReason': geoDebug.reason || '-',
+          'debugInfo.locationGeocodeHttp': geoDebug.httpStatus !== undefined ? `${geoDebug.httpStatus}` : '-',
+          'debugInfo.locationGeocodeApiStatus': geoDebug.apiStatus !== undefined ? `${geoDebug.apiStatus}` : '-',
+          'debugInfo.locationGeocodeApiMessage': geoDebug.apiMessage || '-',
+          'debugInfo.locationGeocodeRaw': geoDebug.networkError || '-',
+          'debugInfo.weatherStatus': '请求中'
+        });
         // 用位置获取天气
         return weatherService.getWeather(loc.latitude, loc.longitude);
       })
       .then(weather => {
-        this.setData({ weather, isLoadingWeather: false });
-        if (weather && weather.temperature === '--') {
+        const weatherDebug = weather && weather.debug ? weather.debug : {};
+        const isWeatherFailed = !weather || weather.temperature === '--' || weatherDebug.ok === false;
+        this.setData({
+          weather,
+          isLoadingWeather: false,
+          'debugInfo.weatherStatus': isWeatherFailed ? '失败' : '成功',
+          'debugInfo.weatherResult': `${weather.icon || ''} ${weather.text || ''} ${weather.temperature || '--'}°C`,
+          'debugInfo.weatherHttpStatus': weatherDebug.httpStatus !== undefined ? `${weatherDebug.httpStatus}` : '-',
+          'debugInfo.weatherApiCode': weatherDebug.apiCode !== undefined ? `${weatherDebug.apiCode}` : '-',
+          'debugInfo.weatherApiMessage': weatherDebug.apiMessage || '-',
+          'debugInfo.weatherRaw': weatherDebug.networkError || '-'
+        });
+
+        if (isWeatherFailed) {
+          this.setData({ 'debugInfo.weatherError': weather.text || '天气获取失败' });
           wx.showToast({ title: weather.text || '天气获取失败', icon: 'none' });
         }
       })
       .catch((err) => {
-        this.setData({ isLoadingLocation: false, isLoadingWeather: false });
+        this.setData({
+          isLoadingLocation: false,
+          isLoadingWeather: false,
+          'debugInfo.locationStatus': '失败',
+          'debugInfo.weatherStatus': '未执行',
+          'debugInfo.locationError': (err && err.message) || '定位失败',
+          'debugInfo.locationRaw': (err && err.raw && err.raw.errMsg) ? err.raw.errMsg : '-'
+        });
         if (err && err.type === 'AUTH_DENIED') {
           wx.showModal({
             title: '需要位置权限',
@@ -83,7 +187,11 @@ Page({
             confirmText: '去设置',
             success: (res) => {
               if (res.confirm) {
-                wx.openSetting({});
+                wx.openSetting({
+                  success: () => {
+                    this.refreshLocationPermission();
+                  }
+                });
               }
             }
           });
@@ -98,6 +206,7 @@ Page({
    * 手动刷新位置和天气
    */
   refreshLocationWeather() {
+    this.refreshLocationPermission();
     this.autoFetchLocationAndWeather();
   },
 

@@ -18,27 +18,49 @@ function getCurrentLocation() {
       type: 'gcj02',
       success(res) {
         const { latitude, longitude } = res;
+        const coordinateName = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
         if (!config.TENCENT_MAP_KEY) {
           // 未配置 API Key，只返回坐标
           resolve({
             latitude,
             longitude,
-            name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            name: coordinateName,
+            geocodeDebug: {
+              ok: false,
+              reason: '未配置地图 Key',
+              httpStatus: '-',
+              apiStatus: '-',
+              apiMessage: '-',
+              networkError: '-'
+            }
           });
           return;
         }
 
         // 使用腾讯地图反向地理编码获取地址
         reverseGeocode(latitude, longitude)
-          .then(name => {
-            resolve({ latitude, longitude, name });
-          })
-          .catch(() => {
+          .then(result => {
             resolve({
               latitude,
               longitude,
-              name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              name: result.name || coordinateName,
+              geocodeDebug: result.debug
+            });
+          })
+          .catch((err) => {
+            resolve({
+              latitude,
+              longitude,
+              name: coordinateName,
+              geocodeDebug: {
+                ok: false,
+                reason: '反向地理编码网络失败',
+                httpStatus: '-',
+                apiStatus: '-',
+                apiMessage: '-',
+                networkError: (err && err.message) || 'request:fail'
+              }
             });
           });
       },
@@ -76,18 +98,42 @@ function reverseGeocode(latitude, longitude) {
           const address = result.formatted_addresses
             ? result.formatted_addresses.recommend
             : result.address;
-          resolve(address || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          const city = result.address_component ? result.address_component.city : '';
+          resolve({
+            name: address || city || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            debug: {
+              ok: true,
+              reason: '反向地理编码成功',
+              httpStatus: res.statusCode,
+              apiStatus: 0,
+              apiMessage: 'ok',
+              networkError: '-'
+            }
+          });
         } else {
-          resolve(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          const apiStatus = res && res.data ? res.data.status : '-';
+          const apiMessage = res && res.data ? (res.data.message || '') : '';
+          resolve({
+            name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            debug: {
+              ok: false,
+              reason: '反向地理编码返回异常',
+              httpStatus: res ? res.statusCode : '-',
+              apiStatus,
+              apiMessage: apiMessage || '-',
+              networkError: '-'
+            }
+          });
         }
       },
-      fail() {
-        reject(new Error('Geocoding request failed'));
+      fail(err) {
+        reject(new Error((err && err.errMsg) || 'Geocoding request failed'));
       }
     });
   });
 }
 
 module.exports = {
-  getCurrentLocation
+  getCurrentLocation,
+  __DEBUG_HAS_MAP_KEY__: !!config.TENCENT_MAP_KEY
 };

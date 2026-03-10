@@ -51,6 +51,64 @@
   padding-bottom: 2rpx;
 }
 
+/* 调试面板 */
+.debug-panel {
+  margin: 0 24rpx 20rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid #f2f2f2;
+}
+
+.debug-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.debug-toggle {
+  font-size: 24rpx;
+  color: #4A90E2;
+}
+
+.debug-content {
+  padding: 12rpx 24rpx 20rpx;
+}
+
+.debug-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 10rpx 0;
+  border-bottom: 1rpx dashed #f2f2f2;
+}
+
+.debug-row:last-child {
+  border-bottom: none;
+}
+
+.debug-key {
+  flex: 0 0 180rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.debug-value {
+  flex: 1;
+  font-size: 24rpx;
+  color: #222;
+  text-align: right;
+  word-break: break-all;
+}
+
 /* 输入区域 */
 .input-section {
   margin: 0 24rpx 20rpx;

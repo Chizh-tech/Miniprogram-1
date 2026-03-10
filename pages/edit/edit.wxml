@@ -33,6 +33,36 @@
     </view>
   </view>
 
+  <view class="debug-panel card">
+    <view class="debug-header" bindtap="toggleDebugPanel">
+      <text class="debug-title">调试面板（位置/天气）</text>
+      <text class="debug-toggle">{{showDebugPanel ? '收起' : '展开'}}</text>
+    </view>
+    <view wx:if="{{showDebugPanel}}" class="debug-content">
+      <view class="debug-row"><text class="debug-key">最近刷新</text><text class="debug-value">{{debugInfo.lastRefreshAt}}</text></view>
+      <view class="debug-row"><text class="debug-key">位置权限</text><text class="debug-value">{{debugInfo.locationPermission}}</text></view>
+      <view class="debug-row"><text class="debug-key">定位状态</text><text class="debug-value">{{debugInfo.locationStatus}}</text></view>
+      <view class="debug-row"><text class="debug-key">定位结果</text><text class="debug-value">{{debugInfo.locationResult}}</text></view>
+      <view class="debug-row"><text class="debug-key">定位错误</text><text class="debug-value">{{debugInfo.locationError}}</text></view>
+      <view class="debug-row"><text class="debug-key">定位原始错误</text><text class="debug-value">{{debugInfo.locationRaw}}</text></view>
+      <view class="debug-row"><text class="debug-key">地理编码状态</text><text class="debug-value">{{debugInfo.locationGeocodeStatus}}</text></view>
+      <view class="debug-row"><text class="debug-key">地理编码原因</text><text class="debug-value">{{debugInfo.locationGeocodeReason}}</text></view>
+      <view class="debug-row"><text class="debug-key">地理编码HTTP</text><text class="debug-value">{{debugInfo.locationGeocodeHttp}}</text></view>
+      <view class="debug-row"><text class="debug-key">地理编码API状态</text><text class="debug-value">{{debugInfo.locationGeocodeApiStatus}}</text></view>
+      <view class="debug-row"><text class="debug-key">地理编码API消息</text><text class="debug-value">{{debugInfo.locationGeocodeApiMessage}}</text></view>
+      <view class="debug-row"><text class="debug-key">地理编码原始错</text><text class="debug-value">{{debugInfo.locationGeocodeRaw}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气状态</text><text class="debug-value">{{debugInfo.weatherStatus}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气结果</text><text class="debug-value">{{debugInfo.weatherResult}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气错误</text><text class="debug-value">{{debugInfo.weatherError}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气HTTP状态</text><text class="debug-value">{{debugInfo.weatherHttpStatus}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气API返回码</text><text class="debug-value">{{debugInfo.weatherApiCode}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气API消息</text><text class="debug-value">{{debugInfo.weatherApiMessage}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气原始网络错</text><text class="debug-value">{{debugInfo.weatherRaw}}</text></view>
+      <view class="debug-row"><text class="debug-key">天气Key已配置</text><text class="debug-value">{{debugInfo.hasWeatherKey ? '是' : '否'}}</text></view>
+      <view class="debug-row"><text class="debug-key">地图Key已配置</text><text class="debug-value">{{debugInfo.hasTencentMapKey ? '是' : '否'}}</text></view>
+    </view>
+  </view>
+
   <!-- 标题输入 -->
   <view class="input-section card">
     <input
