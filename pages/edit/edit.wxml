@@ -81,10 +81,12 @@
       placeholder-style="color: #ccc;"
       value="{{content}}"
       bindinput="onContentInput"
+      maxlength="5000"
       auto-height
       show-confirm-bar="{{false}}"
       adjust-position="{{true}}"
     />
+    <view class="content-counter">{{content.length}}/5000</view>
   </view>
 
   <!-- 图片区域 -->
