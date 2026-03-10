@@ -44,7 +44,7 @@ Page({
     }
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     const date = options.date || util.formatDate(new Date());
     const dateObj = util.parseDate(date);
     const dateDisplay = `${date}  ${util.getWeekdayName(dateObj.getDay())}`;
@@ -59,7 +59,7 @@ Page({
     this.refreshLocationPermission();
 
     // 检查是否已有该日期的日记（编辑模式）
-    const existing = storage.getDiaryByDate(date);
+    const existing = await storage.getDiaryByDate(date);
     if (existing) {
       this.setData({
         title: existing.title || '',
@@ -370,7 +370,7 @@ Page({
   /**
    * 保存日记
    */
-  saveDiary() {
+  async saveDiary() {
     const { date, title, content, images, videos, location, weather } = this.data;
 
     if (!content.trim() && !title.trim() && images.length === 0 && videos.length === 0) {
@@ -395,14 +395,14 @@ Page({
     };
 
     // 如果是编辑模式，保留原 id 和 createdAt
-    const existing = storage.getDiaryByDate(date);
+    const existing = await storage.getDiaryByDate(date);
     if (existing) {
       diary.id = existing.id;
       diary.createdAt = existing.createdAt;
     }
 
     try {
-      storage.saveDiary(diary);
+      await storage.saveDiary(diary);
       this.setData({ isSaving: false });
       wx.showToast({ title: '保存成功', icon: 'success' });
       setTimeout(() => {

@@ -32,19 +32,19 @@ Page({
     this.renderCalendar();
   },
 
-  onShow() {
+  async onShow() {
     // 每次显示页面时刷新（日记可能有增减）
-    this.renderCalendar();
-    this.loadDiaryList();
+    await this.renderCalendar();
+    await this.loadDiaryList();
   },
 
   /**
    * 渲染当前月份日历
    */
-  renderCalendar() {
+  async renderCalendar() {
     const { currentYear, currentMonth } = this.data;
     const calendarDays = util.getCalendarDays(currentYear, currentMonth);
-    const diaryDatesArr = storage.getDiaryDatesInMonth(currentYear, currentMonth);
+    const diaryDatesArr = await storage.getDiaryDatesInMonth(currentYear, currentMonth);
 
     // 转为 Set 方便查找
     const diaryDates = {};
@@ -66,9 +66,9 @@ Page({
   /**
    * 加载日记列表（日历模式：当月；列表模式：全部）
    */
-  loadDiaryList() {
+  async loadDiaryList() {
     const { currentYear, currentMonth, viewMode } = this.data;
-    let list = storage.getDiaryList();
+    let list = await storage.getDiaryList();
 
     if (viewMode === 'calendar') {
       const prefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}-`;
@@ -90,7 +90,7 @@ Page({
   /**
    * 切换到上一个月
    */
-  prevMonth() {
+  async prevMonth() {
     let { currentYear, currentMonth } = this.data;
     currentMonth--;
     if (currentMonth < 1) {
@@ -98,14 +98,14 @@ Page({
       currentYear--;
     }
     this.setData({ currentYear, currentMonth, selectedDate: '' });
-    this.renderCalendar();
-    this.loadDiaryList();
+    await this.renderCalendar();
+    await this.loadDiaryList();
   },
 
   /**
    * 切换到下一个月
    */
-  nextMonth() {
+  async nextMonth() {
     let { currentYear, currentMonth } = this.data;
     currentMonth++;
     if (currentMonth > 12) {
@@ -113,35 +113,35 @@ Page({
       currentYear++;
     }
     this.setData({ currentYear, currentMonth, selectedDate: '' });
-    this.renderCalendar();
-    this.loadDiaryList();
+    await this.renderCalendar();
+    await this.loadDiaryList();
   },
 
   /**
    * 回到今天
    */
-  goToday() {
+  async goToday() {
     const now = new Date();
     this.setData({
       currentYear: now.getFullYear(),
       currentMonth: now.getMonth() + 1,
       selectedDate: util.formatDate(now)
     });
-    this.renderCalendar();
-    this.loadDiaryList();
+    await this.renderCalendar();
+    await this.loadDiaryList();
   },
 
   /**
    * 点击日期格子
    */
-  onDayTap(e) {
+  async onDayTap(e) {
     const { dateStr, empty } = e.currentTarget.dataset;
     if (empty || !dateStr) return;
 
     this.setData({ selectedDate: dateStr });
-    this.renderCalendar();
+    await this.renderCalendar();
 
-    const diary = storage.getDiaryByDate(dateStr);
+    const diary = await storage.getDiaryByDate(dateStr);
     if (diary) {
       // 已有日记 → 查看详情
       wx.navigateTo({

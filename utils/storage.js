@@ -1,15 +1,68 @@
 /**
  * 日记数据存储服务
- * 使用微信本地存储持久化数据
+ * 优先使用腾讯云开发数据库，未配置时回退到本地存储
  */
 
+const config = require('../config');
+
 const STORAGE_KEY = 'diaries';
+const DEFAULT_COLLECTION = 'diaries';
+const PAGE_LIMIT = 100;
+
+function isCloudEnabled() {
+  return !!(wx.cloud && config.CLOUD_ENV_ID);
+}
+
+function getCollectionName() {
+  return config.DIARY_COLLECTION || DEFAULT_COLLECTION;
+}
+
+function getCloudDb() {
+  if (!isCloudEnabled()) return null;
+  return wx.cloud.database();
+}
+
+function toCloudPayload(diary) {
+  const { _id, _openid, ...rest } = diary;
+  return rest;
+}
+
+async function getCloudDiaryList() {
+  const db = getCloudDb();
+  const collectionName = getCollectionName();
+  const countRes = await db.collection(collectionName).count();
+  const total = countRes.total || 0;
+  const tasks = [];
+
+  for (let skip = 0; skip < total; skip += PAGE_LIMIT) {
+    tasks.push(
+      db.collection(collectionName)
+        .orderBy('date', 'desc')
+        .skip(skip)
+        .limit(PAGE_LIMIT)
+        .get()
+    );
+  }
+
+  if (tasks.length === 0) return [];
+  const pages = await Promise.all(tasks);
+  return pages.flatMap(page => page.data || []);
+}
 
 /**
  * 获取所有日记
  * @returns {Object} 以日期字符串为键的日记对象
  */
-function getAllDiaries() {
+async function getAllDiaries() {
+  if (isCloudEnabled()) {
+    const list = await getCloudDiaryList();
+    const map = {};
+    list.forEach(item => {
+      map[item.date] = item;
+    });
+    return map;
+  }
+
   return wx.getStorageSync(STORAGE_KEY) || {};
 }
 
@@ -18,8 +71,15 @@ function getAllDiaries() {
  * @param {string} dateStr - YYYY-MM-DD
  * @returns {Object|null}
  */
-function getDiaryByDate(dateStr) {
-  const diaries = getAllDiaries();
+async function getDiaryByDate(dateStr) {
+  if (isCloudEnabled()) {
+    const db = getCloudDb();
+    const collectionName = getCollectionName();
+    const res = await db.collection(collectionName).where({ date: dateStr }).limit(1).get();
+    return (res.data && res.data[0]) || null;
+  }
+
+  const diaries = await getAllDiaries();
   return diaries[dateStr] || null;
 }
 
@@ -28,8 +88,15 @@ function getDiaryByDate(dateStr) {
  * @param {string} id
  * @returns {Object|null}
  */
-function getDiaryById(id) {
-  const diaries = getAllDiaries();
+async function getDiaryById(id) {
+  if (isCloudEnabled()) {
+    const db = getCloudDb();
+    const collectionName = getCollectionName();
+    const res = await db.collection(collectionName).where({ id }).limit(1).get();
+    return (res.data && res.data[0]) || null;
+  }
+
+  const diaries = await getAllDiaries();
   return Object.values(diaries).find(d => d.id === id) || null;
 }
 
@@ -38,8 +105,23 @@ function getDiaryById(id) {
  * @param {Object} diary
  * @returns {Object} 保存后的日记对象
  */
-function saveDiary(diary) {
-  const diaries = getAllDiaries();
+async function saveDiary(diary) {
+  if (isCloudEnabled()) {
+    const db = getCloudDb();
+    const collectionName = getCollectionName();
+    const existed = await getDiaryByDate(diary.date);
+    const payload = toCloudPayload(diary);
+
+    if (existed && existed._id) {
+      await db.collection(collectionName).doc(existed._id).set({ data: payload });
+    } else {
+      await db.collection(collectionName).add({ data: payload });
+    }
+
+    return diary;
+  }
+
+  const diaries = await getAllDiaries();
   diaries[diary.date] = diary;
   wx.setStorageSync(STORAGE_KEY, diaries);
   return diary;
@@ -49,8 +131,17 @@ function saveDiary(diary) {
  * 删除日记
  * @param {string} dateStr - YYYY-MM-DD
  */
-function deleteDiary(dateStr) {
-  const diaries = getAllDiaries();
+async function deleteDiary(dateStr) {
+  if (isCloudEnabled()) {
+    const db = getCloudDb();
+    const collectionName = getCollectionName();
+    const res = await db.collection(collectionName).where({ date: dateStr }).get();
+    const docs = res.data || [];
+    await Promise.all(docs.map(doc => db.collection(collectionName).doc(doc._id).remove()));
+    return;
+  }
+
+  const diaries = await getAllDiaries();
   delete diaries[dateStr];
   wx.setStorageSync(STORAGE_KEY, diaries);
 }
@@ -61,8 +152,8 @@ function deleteDiary(dateStr) {
  * @param {number} month - 1-indexed
  * @returns {string[]} 日期字符串数组
  */
-function getDiaryDatesInMonth(year, month) {
-  const diaries = getAllDiaries();
+async function getDiaryDatesInMonth(year, month) {
+  const diaries = await getAllDiaries();
   const prefix = `${year}-${String(month).padStart(2, '0')}-`;
   return Object.keys(diaries).filter(d => d.startsWith(prefix));
 }
@@ -71,8 +162,8 @@ function getDiaryDatesInMonth(year, month) {
  * 获取所有日记列表，按日期倒序排列
  * @returns {Object[]}
  */
-function getDiaryList() {
-  const diaries = getAllDiaries();
+async function getDiaryList() {
+  const diaries = await getAllDiaries();
   return Object.values(diaries).sort((a, b) => b.date.localeCompare(a.date));
 }
 

@@ -9,22 +9,22 @@ Page({
     currentVideoIndex: -1
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     const date = options.date;
     this.setData({ date });
-    this.loadDiary();
+    await this.loadDiary();
   },
 
-  onShow() {
-    this.loadDiary();
+  async onShow() {
+    await this.loadDiary();
   },
 
   /**
    * 加载日记数据
    */
-  loadDiary() {
+  async loadDiary() {
     const { date } = this.data;
-    const diary = storage.getDiaryByDate(date);
+    const diary = await storage.getDiaryByDate(date);
     if (!diary) {
       wx.showToast({ title: '日记不存在', icon: 'none' });
       setTimeout(() => wx.navigateBack(), 1000);
@@ -71,12 +71,12 @@ Page({
       confirmText: '删除',
       confirmColor: '#E25454',
       cancelText: '取消',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
           const { date } = this.data;
           // 删除关联的本地文件
           this.deleteLocalFiles();
-          storage.deleteDiary(date);
+          await storage.deleteDiary(date);
           wx.showToast({ title: '已删除', icon: 'success' });
           setTimeout(() => wx.navigateBack(), 800);
         }
