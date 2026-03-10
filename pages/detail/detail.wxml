@@ -64,13 +64,16 @@
 
   <!-- 底部操作 -->
   <view class="bottom-actions">
+    <button class="action-btn btn-share" open-type="share">
+      <text>🔗 分享</text>
+    </button>
     <view class="action-btn btn-share" bindtap="onShareTap">
       <text>📋 复制</text>
     </view>
-    <view class="action-btn btn-edit" bindtap="editDiary">
+    <view class="action-btn btn-edit" bindtap="editDiary" wx:if="{{!isSharedView}}">
       <text>✏️ 编辑</text>
     </view>
-    <view class="action-btn btn-delete" bindtap="deleteDiary">
+    <view class="action-btn btn-delete" bindtap="deleteDiary" wx:if="{{!isSharedView}}">
       <text>🗑️ 删除</text>
     </view>
   </view>

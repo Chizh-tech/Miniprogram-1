@@ -8,17 +8,90 @@ Page({
     dateDisplay: '',
     currentVideoIndex: -1,
     imagePreviewUrls: [],
-    videoPreviewUrls: []
+    videoPreviewUrls: [],
+    isSharedView: false
   },
 
   async onLoad(options) {
+    if (options && options.shareData) {
+      const sharedDiary = this.parseShareData(options.shareData);
+      if (sharedDiary) {
+        wx.setNavigationBarTitle({ title: sharedDiary.title || '分享的日记' });
+        this.setData({
+          diary: sharedDiary,
+          date: sharedDiary.date || '',
+          dateDisplay: sharedDiary.dateDisplay || (sharedDiary.date || ''),
+          imagePreviewUrls: sharedDiary.images || [],
+          videoPreviewUrls: sharedDiary.videos || [],
+          isSharedView: true
+        });
+        return;
+      }
+    }
+
     const date = options.date;
-    this.setData({ date });
+    this.setData({ date, isSharedView: false });
     await this.loadDiary();
   },
 
   async onShow() {
+    if (this.data.isSharedView) return;
     await this.loadDiary();
+  },
+
+  parseShareData(rawData) {
+    try {
+      const decoded = decodeURIComponent(rawData);
+      const parsed = JSON.parse(decoded);
+      if (!parsed || !parsed.date) return null;
+
+      return {
+        date: parsed.date,
+        title: parsed.title || '',
+        content: parsed.content || '',
+        location: parsed.location || null,
+        weather: parsed.weather || null,
+        createdAt: parsed.createdAt || '',
+        updatedAt: parsed.updatedAt || '',
+        dateDisplay: parsed.dateDisplay || parsed.date,
+        images: [],
+        videos: []
+      };
+    } catch (err) {
+      return null;
+    }
+  },
+
+  buildShareData() {
+    const { diary, dateDisplay } = this.data;
+    if (!diary) return '';
+
+    const payload = {
+      date: diary.date,
+      dateDisplay: dateDisplay || diary.date,
+      title: diary.title || '',
+      // 控制分享路径长度，避免 query 过长导致分享失败。
+      content: (diary.content || '').slice(0, 180),
+      location: diary.location || null,
+      weather: diary.weather || null,
+      createdAt: diary.createdAt || '',
+      updatedAt: diary.updatedAt || ''
+    };
+
+    return encodeURIComponent(JSON.stringify(payload));
+  },
+
+  getShareConfig() {
+    const { diary } = this.data;
+    const title = diary && diary.title
+      ? `日记分享：${diary.title}`
+      : `日记分享：${this.data.dateDisplay || '我的日记'}`;
+    const shareData = this.buildShareData();
+
+    return {
+      title,
+      path: `/pages/detail/detail?shareData=${shareData}`
+    };
   },
 
   /**
@@ -85,6 +158,7 @@ Page({
    * 编辑日记
    */
   editDiary() {
+    if (this.data.isSharedView) return;
     const { date } = this.data;
     wx.navigateTo({
       url: `/pages/edit/edit?date=${date}`
@@ -95,6 +169,7 @@ Page({
    * 删除日记
    */
   deleteDiary() {
+    if (this.data.isSharedView) return;
     wx.showModal({
       title: '删除日记',
       content: '确认删除这篇日记？删除后不可恢复。',
@@ -168,5 +243,18 @@ Page({
         wx.showToast({ title: '日记内容已复制', icon: 'success' });
       }
     });
+  },
+
+  onShareAppMessage() {
+    return this.getShareConfig();
+  },
+
+  onShareTimeline() {
+    const config = this.getShareConfig();
+    const query = (config.path.split('?')[1] || '');
+    return {
+      title: config.title,
+      query
+    };
   }
 });
