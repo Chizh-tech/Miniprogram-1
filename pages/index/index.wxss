@@ -177,6 +177,7 @@
 .day-cell {
   width: calc(100% / 7);
   aspect-ratio: 1;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -209,6 +210,22 @@
   font-size: 28rpx;
   color: #333;
   line-height: 1.2;
+}
+
+.today-badge {
+  position: absolute;
+  top: 6rpx;
+  right: 6rpx;
+  min-width: 24rpx;
+  height: 24rpx;
+  padding: 0 6rpx;
+  border-radius: 999rpx;
+  background: #0d7db8;
+  color: #fff;
+  font-size: 16rpx;
+  line-height: 24rpx;
+  text-align: center;
+  font-weight: 600;
 }
 
 .day-cell.today .day-num {
@@ -268,7 +285,7 @@
   color: #9256c9;
 }
 
-.status-default {
+.day-status.status-default {
   background: #7ea7be;
 }
 

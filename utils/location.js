@@ -8,6 +8,15 @@
 
 const config = require('../config');
 
+const TENCENT_STATUS_REASON_MAP = {
+  120: '腾讯地图配额已用完或超出日调用限制',
+  121: '腾讯地图 Key 未启用 WebService 或服务受限',
+  311: '腾讯地图 Key 无效',
+  312: '腾讯地图 Key 已过期或已停用',
+  401: '腾讯地图请求参数错误',
+  403: '腾讯地图请求被拒绝（域名白名单/签名/权限）'
+};
+
 /**
  * 获取当前位置信息（坐标 + 地址名称）
  * @returns {Promise<Object>}
@@ -77,13 +86,61 @@ function getCurrentLocation() {
   });
 }
 
+function buildCoordinateName(latitude, longitude) {
+  return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+}
+
+function mapTencentErrorReason(apiStatus, apiMessage, httpStatus) {
+  if (TENCENT_STATUS_REASON_MAP[apiStatus]) {
+    return TENCENT_STATUS_REASON_MAP[apiStatus];
+  }
+
+  if (httpStatus === 401) return '腾讯地图鉴权失败（401）';
+  if (httpStatus === 403) return '腾讯地图访问被拒绝（403）';
+  if (httpStatus === 429) return '腾讯地图请求过于频繁（429）';
+  if (httpStatus >= 500) return '腾讯地图服务异常';
+  if (apiMessage) return `腾讯地图返回异常：${apiMessage}`;
+  return '反向地理编码返回异常';
+}
+
+async function reverseGeocode(latitude, longitude) {
+  const coordinateName = buildCoordinateName(latitude, longitude);
+  const tencentResult = await reverseGeocodeByTencent(latitude, longitude);
+
+  if (tencentResult.debug && tencentResult.debug.ok) {
+    return tencentResult;
+  }
+
+  if (!config.WEATHER_API_KEY) {
+    return tencentResult;
+  }
+
+  const weatherResult = await reverseGeocodeByOpenWeather(latitude, longitude);
+  if (weatherResult.debug && weatherResult.debug.ok) {
+    const fallbackMessage = weatherResult.debug.apiMessage || weatherResult.debug.reason || 'fallback ok';
+    return {
+      name: weatherResult.name || coordinateName,
+      debug: {
+        ok: true,
+        reason: '地址解析成功（备用服务）',
+        httpStatus: tencentResult.debug ? tencentResult.debug.httpStatus : '-',
+        apiStatus: tencentResult.debug ? tencentResult.debug.apiStatus : '-',
+        apiMessage: `${tencentResult.debug && tencentResult.debug.apiMessage ? tencentResult.debug.apiMessage : '-'} | fallback:${fallbackMessage}`,
+        networkError: '-'
+      }
+    };
+  }
+
+  return tencentResult;
+}
+
 /**
  * 腾讯地图反向地理编码
  * @param {number} latitude
  * @param {number} longitude
  * @returns {Promise<string>} 地址名称
  */
-function reverseGeocode(latitude, longitude) {
+function reverseGeocodeByTencent(latitude, longitude) {
   return new Promise((resolve, reject) => {
     wx.request({
       url: config.GEOCODING_API_URL,
@@ -100,7 +157,7 @@ function reverseGeocode(latitude, longitude) {
             : result.address;
           const city = result.address_component ? result.address_component.city : '';
           resolve({
-            name: address || city || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            name: address || city || buildCoordinateName(latitude, longitude),
             debug: {
               ok: true,
               reason: '反向地理编码成功',
@@ -114,10 +171,10 @@ function reverseGeocode(latitude, longitude) {
           const apiStatus = res && res.data ? res.data.status : '-';
           const apiMessage = res && res.data ? (res.data.message || '') : '';
           resolve({
-            name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+            name: buildCoordinateName(latitude, longitude),
             debug: {
               ok: false,
-              reason: '反向地理编码返回异常',
+              reason: mapTencentErrorReason(apiStatus, apiMessage, res ? res.statusCode : 0),
               httpStatus: res ? res.statusCode : '-',
               apiStatus,
               apiMessage: apiMessage || '-',
@@ -128,6 +185,64 @@ function reverseGeocode(latitude, longitude) {
       },
       fail(err) {
         reject(new Error((err && err.errMsg) || 'Geocoding request failed'));
+      }
+    });
+  });
+}
+
+function reverseGeocodeByOpenWeather(latitude, longitude) {
+  return new Promise((resolve) => {
+    wx.request({
+      url: 'https://api.openweathermap.org/geo/1.0/reverse',
+      data: {
+        lat: latitude,
+        lon: longitude,
+        limit: 1,
+        appid: config.WEATHER_API_KEY
+      },
+      success(res) {
+        if (res.statusCode === 200 && Array.isArray(res.data) && res.data.length > 0) {
+          const item = res.data[0] || {};
+          const zhName = item.local_names && (item.local_names.zh || item.local_names['zh-CN']);
+          const cityName = zhName || item.name || '';
+          const area = [item.state, item.country].filter(Boolean).join(' ');
+          resolve({
+            name: [cityName, area].filter(Boolean).join(' · ') || buildCoordinateName(latitude, longitude),
+            debug: {
+              ok: true,
+              reason: 'OpenWeather 逆地理编码成功',
+              httpStatus: res.statusCode,
+              apiStatus: 200,
+              apiMessage: 'ok',
+              networkError: '-'
+            }
+          });
+        } else {
+          resolve({
+            name: buildCoordinateName(latitude, longitude),
+            debug: {
+              ok: false,
+              reason: 'OpenWeather 逆地理编码返回异常',
+              httpStatus: res ? res.statusCode : '-',
+              apiStatus: '-',
+              apiMessage: (res && res.data && res.data.message) ? res.data.message : '-',
+              networkError: '-'
+            }
+          });
+        }
+      },
+      fail(err) {
+        resolve({
+          name: buildCoordinateName(latitude, longitude),
+          debug: {
+            ok: false,
+            reason: 'OpenWeather 逆地理编码网络失败',
+            httpStatus: '-',
+            apiStatus: '-',
+            apiMessage: '-',
+            networkError: (err && err.errMsg) || 'request:fail'
+          }
+        });
       }
     });
   });

@@ -47,13 +47,6 @@
       </view>
     </view>
 
-    <view class="status-detail-box">
-      <view class="status-detail-title">状态说明（按日期颜色识别）</view>
-      <view class="status-detail-item {{item.className}}" wx:for="{{statusLegend}}" wx:key="value">
-        <text class="status-detail-text">{{item.detail}}</text>
-      </view>
-    </view>
-
     <!-- 日期格子 -->
     <view class="days-grid">
       <view
@@ -64,6 +57,7 @@
         data-date-str="{{item.dateStr}}"
         data-empty="{{item.empty}}"
       >
+        <view class="today-badge" wx:if="{{item.isToday}}">今</view>
         <text class="day-num">{{item.day}}</text>
         <view class="day-status {{item.statusClassName}}" wx:if="{{item.hasDiary && !item.isSelected}}">
           <text class="day-status-icon">{{item.statusIcon}}</text>

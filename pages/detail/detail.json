@@ -3,6 +3,5 @@
   "navigationBarBackgroundColor": "#0A517B",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#062F57",
-  "enableShareTimeline": true,
   "usingComponents": {}
 }

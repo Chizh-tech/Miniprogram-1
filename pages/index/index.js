@@ -74,8 +74,12 @@ Page({
         const statusMeta = diaryStatusMetaMap[day.dateStr] || null;
         day.hasDiary = !!diaryDates[day.dateStr];
         day.isSelected = day.dateStr === this.data.selectedDate;
-        day.statusClassName = statusMeta ? statusMeta.className : 'status-default';
-        day.statusIcon = statusMeta ? statusMeta.icon : '•';
+        day.statusClassName = statusMeta
+          ? statusMeta.className
+          : (day.hasDiary ? 'status-default' : '');
+        day.statusIcon = day.hasDiary
+          ? (statusMeta ? statusMeta.icon : '•')
+          : '';
       }
     });
 
@@ -172,6 +176,8 @@ Page({
   async onDayTap(e) {
     const { dateStr, empty } = e.currentTarget.dataset;
     if (empty || !dateStr) return;
+    const today = util.formatDate(new Date());
+    const isFutureDate = dateStr > today;
 
     this.setData({ selectedDate: dateStr });
     await this.renderCalendar();
@@ -183,6 +189,14 @@ Page({
         url: `/pages/detail/detail?date=${dateStr}`
       });
     } else {
+      if (isFutureDate) {
+        wx.showToast({
+          title: '未来日期不能新建日志',
+          icon: 'none'
+        });
+        return;
+      }
+
       // 无日记 → 询问是否新建
       wx.showModal({
         title: dateStr,

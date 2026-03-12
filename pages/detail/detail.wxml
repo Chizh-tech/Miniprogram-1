@@ -6,6 +6,9 @@
       <text class="hero-date-text">{{dateDisplay}}</text>
     </view>
     <view class="hero-meta">
+      <view class="meta-chip status-chip {{diary.diveStatusClassName}}" wx:if="{{diary.diveStatusLabel}}">
+        <text>{{diary.diveStatusIcon}} {{diary.diveStatusLabel}}</text>
+      </view>
       <view class="meta-chip" wx:if="{{diary.weather}}">
         <text>{{diary.weather.icon}} {{diary.weather.text}} {{diary.weather.temperature}}°C</text>
       </view>
@@ -65,16 +68,10 @@
 
   <!-- 底部操作 -->
   <view class="bottom-actions">
-    <button class="action-btn btn-share" open-type="share">
-      <text>🔗 分享</text>
-    </button>
-    <view class="action-btn btn-share" bindtap="onShareTap">
-      <text>📋 复制</text>
-    </view>
-    <view class="action-btn btn-edit" bindtap="editDiary" wx:if="{{!isSharedView}}">
+    <view class="action-btn btn-edit" bindtap="editDiary">
       <text>✏️ 编辑日志</text>
     </view>
-    <view class="action-btn btn-delete" bindtap="deleteDiary" wx:if="{{!isSharedView}}">
+    <view class="action-btn btn-delete" bindtap="deleteDiary">
       <text>🗑️ 删除日志</text>
     </view>
   </view>
