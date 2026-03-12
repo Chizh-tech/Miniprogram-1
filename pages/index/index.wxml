@@ -1,4 +1,5 @@
 <view class="page">
+  <view class="ocean-glow"></view>
   <!-- 顶部工具栏 -->
   <view class="toolbar">
     <view class="view-tabs">
@@ -7,18 +8,18 @@
         bindtap="switchView"
         data-mode="calendar"
       >
-        <text>📅 日历</text>
+        <text>🌊 潜水日历</text>
       </view>
       <view
         class="tab-item {{viewMode === 'list' ? 'active' : ''}}"
         bindtap="switchView"
         data-mode="list"
       >
-        <text>📋 列表</text>
+        <text>🫧 潜水日志</text>
       </view>
     </view>
     <view class="create-btn" bindtap="onCreateTap">
-      <text>✏️ 写日记</text>
+      <text>🤿 记录潜水</text>
     </view>
   </view>
 
@@ -39,34 +40,50 @@
       <view class="week-cell" wx:for="{{weekHeaders}}" wx:key="index">{{item}}</view>
     </view>
 
+    <view class="status-legend">
+      <view class="legend-item {{item.className}}" wx:for="{{statusLegend}}" wx:key="value">
+        <text class="legend-icon">{{item.icon}}</text>
+        <text class="legend-label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="status-detail-box">
+      <view class="status-detail-title">状态说明（按日期颜色识别）</view>
+      <view class="status-detail-item {{item.className}}" wx:for="{{statusLegend}}" wx:key="value">
+        <text class="status-detail-text">{{item.detail}}</text>
+      </view>
+    </view>
+
     <!-- 日期格子 -->
     <view class="days-grid">
       <view
         wx:for="{{calendarDays}}"
         wx:key="index"
-        class="day-cell {{item.empty ? 'empty' : ''}} {{item.isToday ? 'today' : ''}} {{item.isSelected ? 'selected' : ''}} {{item.hasDiary ? 'has-diary' : ''}}"
+        class="day-cell {{item.empty ? 'empty' : ''}} {{item.isToday ? 'today' : ''}} {{item.isSelected ? 'selected' : ''}} {{item.hasDiary ? 'has-diary' : ''}} {{item.statusClassName}}"
         bindtap="onDayTap"
         data-date-str="{{item.dateStr}}"
         data-empty="{{item.empty}}"
       >
         <text class="day-num">{{item.day}}</text>
-        <view class="diary-dot" wx:if="{{item.hasDiary && !item.isSelected}}"></view>
+        <view class="day-status {{item.statusClassName}}" wx:if="{{item.hasDiary && !item.isSelected}}">
+          <text class="day-status-icon">{{item.statusIcon}}</text>
+        </view>
       </view>
     </view>
 
     <!-- 当月日记数量 -->
     <view class="month-summary">
-      <text>本月共 {{diaryList.length}} 篇日记</text>
+      <text>本月共 {{diaryList.length}} 次潜水记录</text>
     </view>
   </view>
 
   <!-- 日记列表（日历下方或列表视图） -->
   <view class="diary-section">
     <view wx:if="{{viewMode === 'calendar'}}">
-      <view class="section-label" wx:if="{{diaryList.length > 0}}">本月日记</view>
+      <view class="section-label" wx:if="{{diaryList.length > 0}}">本月潜水日志</view>
     </view>
     <view wx:else>
-      <view class="section-label">全部日记</view>
+      <view class="section-label">全部潜水日志</view>
     </view>
 
     <!-- 日记卡片列表 -->
@@ -84,8 +101,9 @@
             <text class="diary-month-year">{{item.monthYear}}</text>
           </view>
           <view class="diary-meta">
-            <text class="diary-title">{{item.title || '无标题'}}</text>
+            <text class="diary-title">{{item.title || '未命名潜点'}}</text>
             <view class="diary-tags">
+              <text class="tag status-tag {{item.diveStatusClassName}}" wx:if="{{item.diveStatusLabel}}">{{item.diveStatusIcon}} {{item.diveStatusLabel}}</text>
               <text class="tag" wx:if="{{item.weather}}">{{item.weather.icon}} {{item.weather.text}} {{item.weather.temperature}}°C</text>
               <text class="tag" wx:if="{{item.location}}">📍 {{item.location.name}}</text>
             </view>
@@ -102,12 +120,12 @@
 
     <!-- 空状态 -->
     <view class="empty-state" wx:elif="{{viewMode === 'list'}}">
-      <text class="empty-icon">📖</text>
-      <text>还没有日记，开始记录吧！</text>
-      <view class="btn-primary empty-create-btn" bindtap="onCreateTap">写第一篇日记</view>
+      <text class="empty-icon">🐚</text>
+      <text>还没有潜水日志，开始下潜记录吧！</text>
+      <view class="btn-primary empty-create-btn" bindtap="onCreateTap">记录第一次潜水</view>
     </view>
     <view class="empty-state-small" wx:else>
-      <text>本月暂无日记</text>
+      <text>本月暂无潜水记录</text>
     </view>
   </view>
 </view>

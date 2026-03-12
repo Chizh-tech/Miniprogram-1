@@ -16,7 +16,7 @@ Page({
     if (options && options.shareData) {
       const sharedDiary = this.parseShareData(options.shareData);
       if (sharedDiary) {
-        wx.setNavigationBarTitle({ title: sharedDiary.title || '分享的日记' });
+        wx.setNavigationBarTitle({ title: sharedDiary.title || '分享的潜水日志' });
         this.setData({
           diary: sharedDiary,
           date: sharedDiary.date || '',
@@ -84,8 +84,8 @@ Page({
   getShareConfig() {
     const { diary } = this.data;
     const title = diary && diary.title
-      ? `日记分享：${diary.title}`
-      : `日记分享：${this.data.dateDisplay || '我的日记'}`;
+      ? `潜水日志分享：${diary.title}`
+      : `潜水日志分享：${this.data.dateDisplay || '我的潜水日志'}`;
     const shareData = this.buildShareData();
 
     return {
@@ -101,7 +101,7 @@ Page({
     const { date } = this.data;
     const diary = await storage.getDiaryByDate(date);
     if (!diary) {
-      wx.showToast({ title: '日记不存在', icon: 'none' });
+      wx.showToast({ title: '潜水日志不存在', icon: 'none' });
       setTimeout(() => wx.navigateBack(), 1000);
       return;
     }
@@ -109,7 +109,7 @@ Page({
     const dateObj = util.parseDate(date);
     const dateDisplay = `${date}  ${util.getWeekdayName(dateObj.getDay())}`;
 
-    wx.setNavigationBarTitle({ title: diary.title || '日记详情' });
+    wx.setNavigationBarTitle({ title: diary.title || '潜水日志详情' });
 
     const imagePreviewUrls = await this.resolveFileUrls(diary.images || []);
     const videoPreviewUrls = await this.resolveFileUrls(diary.videos || []);
@@ -171,8 +171,8 @@ Page({
   deleteDiary() {
     if (this.data.isSharedView) return;
     wx.showModal({
-      title: '删除日记',
-      content: '确认删除这篇日记？删除后不可恢复。',
+      title: '删除潜水日志',
+      content: '确认删除这篇潜水日志？删除后不可恢复。',
       confirmText: '删除',
       confirmColor: '#E25454',
       cancelText: '取消',
@@ -240,7 +240,7 @@ Page({
     wx.setClipboardData({
       data: content,
       success() {
-        wx.showToast({ title: '日记内容已复制', icon: 'success' });
+        wx.showToast({ title: '潜水日志已复制', icon: 'success' });
       }
     });
   },

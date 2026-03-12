@@ -1,6 +1,13 @@
 const util = require('../../utils/util');
 const storage = require('../../utils/storage');
 
+const DIVE_STATUS_META = {
+  want: { value: 'want', label: '想去潜水', icon: '○', className: 'status-want', colorText: '蓝色', detail: '蓝色 + ○：想去潜水' },
+  depart: { value: 'depart', label: '出发潜水', icon: '▲', className: 'status-depart', colorText: '橙色', detail: '橙色 + ▲：出发潜水' },
+  diving: { value: 'diving', label: '正在潜水', icon: '●', className: 'status-diving', colorText: '绿色', detail: '绿色 + ●：正在潜水' },
+  return: { value: 'return', label: '潜水归来', icon: '★', className: 'status-return', colorText: '紫色', detail: '紫色 + ★：潜水归来' }
+};
+
 Page({
   data: {
     // 当前显示的年月
@@ -19,7 +26,12 @@ Page({
     // 视图模式：calendar | list
     viewMode: 'calendar',
     // 星期表头
-    weekHeaders: ['日', '一', '二', '三', '四', '五', '六']
+    weekHeaders: ['日', '一', '二', '三', '四', '五', '六'],
+    statusLegend: Object.values(DIVE_STATUS_META)
+  },
+
+  getDiveStatusMeta(status) {
+    return DIVE_STATUS_META[status] || null;
   },
 
   onLoad() {
@@ -44,17 +56,26 @@ Page({
   async renderCalendar() {
     const { currentYear, currentMonth } = this.data;
     const calendarDays = util.getCalendarDays(currentYear, currentMonth);
-    const diaryDatesArr = await storage.getDiaryDatesInMonth(currentYear, currentMonth);
+    const diaryList = await storage.getDiaryList();
+    const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}-`;
+    const monthList = diaryList.filter(d => d && d.date && d.date.startsWith(monthPrefix));
 
     // 转为 Set 方便查找
     const diaryDates = {};
-    diaryDatesArr.forEach(d => { diaryDates[d] = true; });
+    const diaryStatusMetaMap = {};
+    monthList.forEach(d => {
+      diaryDates[d.date] = true;
+      diaryStatusMetaMap[d.date] = this.getDiveStatusMeta(d.diveStatus);
+    });
 
     // 标记有日记的日期
     calendarDays.forEach(day => {
       if (!day.empty) {
+        const statusMeta = diaryStatusMetaMap[day.dateStr] || null;
         day.hasDiary = !!diaryDates[day.dateStr];
         day.isSelected = day.dateStr === this.data.selectedDate;
+        day.statusClassName = statusMeta ? statusMeta.className : 'status-default';
+        day.statusIcon = statusMeta ? statusMeta.icon : '•';
       }
     });
 
@@ -80,6 +101,7 @@ Page({
       .filter(d => d && d.date)
       .map(d => {
         const parts = d.date.split('-');
+        const statusMeta = this.getDiveStatusMeta(d.diveStatus);
         return Object.assign({
           title: '',
           content: '',
@@ -89,7 +111,11 @@ Page({
           weather: null
         }, d, {
           dayNum: parts[2] || '',
-          monthYear: (parts[0] && parts[1]) ? `${parts[1]}/${parts[0]}` : ''
+          monthYear: (parts[0] && parts[1]) ? `${parts[1]}/${parts[0]}` : '',
+          diveStatusMeta: statusMeta,
+          diveStatusClassName: statusMeta ? statusMeta.className : '',
+          diveStatusIcon: statusMeta ? statusMeta.icon : '',
+          diveStatusLabel: statusMeta ? statusMeta.label : ''
         });
       });
 
@@ -160,8 +186,8 @@ Page({
       // 无日记 → 询问是否新建
       wx.showModal({
         title: dateStr,
-        content: '该日期还没有日记，是否新建？',
-        confirmText: '新建',
+        content: '这一天还没有潜水日志，是否创建？',
+        confirmText: '去记录',
         cancelText: '取消',
         success: (res) => {
           if (res.confirm) {

@@ -1,9 +1,9 @@
 /* Global styles */
 page {
-  background-color: #F5F5F5;
+  background-color: #062F57;
   font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
   font-size: 28rpx;
-  color: #333;
+  color: #123b57;
 }
 
 .container {
@@ -12,7 +12,7 @@ page {
 
 /* Common button styles */
 .btn-primary {
-  background-color: #4A90E2;
+  background: linear-gradient(90deg, #1aa5c5, #0d7db8);
   color: #fff;
   border-radius: 8rpx;
   font-size: 30rpx;
@@ -40,7 +40,7 @@ page {
 
 /* Card styles */
 .card {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.95);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 20rpx;
@@ -76,7 +76,7 @@ page {
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
   font-size: 22rpx;
-  background-color: #EEF4FE;
-  color: #4A90E2;
+  background-color: #dff4ff;
+  color: #0d7db8;
   margin-right: 8rpx;
 }

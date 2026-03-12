@@ -22,6 +22,16 @@ function getCloudDb() {
   return wx.cloud.database();
 }
 
+function getLocalDiariesMap() {
+  const localRaw = wx.getStorageSync(STORAGE_KEY) || {};
+  return Array.isArray(localRaw)
+    ? localRaw.reduce((acc, item) => {
+      if (item && item.date) acc[item.date] = item;
+      return acc;
+    }, {})
+    : localRaw;
+}
+
 function toCloudPayload(diary) {
   const { _id, _openid, ...rest } = diary;
   return rest;
@@ -54,13 +64,7 @@ async function getCloudDiaryList() {
  * @returns {Object} 以日期字符串为键的日记对象
  */
 async function getAllDiaries() {
-  const localRaw = wx.getStorageSync(STORAGE_KEY) || {};
-  const localMap = Array.isArray(localRaw)
-    ? localRaw.reduce((acc, item) => {
-      if (item && item.date) acc[item.date] = item;
-      return acc;
-    }, {})
-    : localRaw;
+  const localMap = getLocalDiariesMap();
 
   if (isCloudEnabled()) {
     const list = await getCloudDiaryList();
@@ -88,7 +92,12 @@ async function getDiaryByDate(dateStr) {
     const db = getCloudDb();
     const collectionName = getCollectionName();
     const res = await db.collection(collectionName).where({ date: dateStr }).limit(1).get();
-    return (res.data && res.data[0]) || null;
+    if (res.data && res.data[0]) {
+      return res.data[0];
+    }
+
+    const localDiaries = getLocalDiariesMap();
+    return localDiaries[dateStr] || null;
   }
 
   const diaries = await getAllDiaries();
@@ -105,7 +114,12 @@ async function getDiaryById(id) {
     const db = getCloudDb();
     const collectionName = getCollectionName();
     const res = await db.collection(collectionName).where({ id }).limit(1).get();
-    return (res.data && res.data[0]) || null;
+    if (res.data && res.data[0]) {
+      return res.data[0];
+    }
+
+    const localDiaries = getLocalDiariesMap();
+    return Object.values(localDiaries).find(d => d.id === id) || null;
   }
 
   const diaries = await getAllDiaries();
@@ -150,6 +164,12 @@ async function deleteDiary(dateStr) {
     const res = await db.collection(collectionName).where({ date: dateStr }).get();
     const docs = res.data || [];
     await Promise.all(docs.map(doc => db.collection(collectionName).doc(doc._id).remove()));
+
+    const localDiaries = getLocalDiariesMap();
+    if (localDiaries[dateStr]) {
+      delete localDiaries[dateStr];
+      wx.setStorageSync(STORAGE_KEY, localDiaries);
+    }
     return;
   }
 

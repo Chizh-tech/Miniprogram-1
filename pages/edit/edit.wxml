@@ -1,4 +1,14 @@
 <view class="page">
+  <view class="ocean-popup-mask" wx:if="{{showOceanAnimalPopup}}" catchtap="closeOceanAnimalPopup">
+    <view class="ocean-popup-card" catchtap="preventPopupClose">
+      <text class="ocean-popup-title">今日海洋伙伴</text>
+      <text class="ocean-popup-icon">{{randomOceanAnimal.icon}}</text>
+      <text class="ocean-popup-name">{{randomOceanAnimal.name}}</text>
+      <text class="ocean-popup-tip">{{randomOceanAnimal.tip}}</text>
+      <view class="ocean-popup-btn" bindtap="closeOceanAnimalPopup">开始记录</view>
+    </view>
+  </view>
+
   <!-- 日期和天气位置信息头部 -->
   <view class="header-info card">
     <view class="date-row">
@@ -63,11 +73,30 @@
     </view>
   </view>
 
+  <view class="status-section card">
+    <view class="status-title-row">
+      <text class="status-title">潜水状态</text>
+      <text class="status-tip">请选择当前阶段</text>
+    </view>
+    <view class="status-options">
+      <view
+        wx:for="{{diveStatusOptions}}"
+        wx:key="value"
+        class="status-option {{item.className}} {{diveStatus === item.value ? 'active' : ''}}"
+        bindtap="onDiveStatusSelect"
+        data-value="{{item.value}}"
+      >
+        <text class="status-option-icon">{{item.icon}}</text>
+        <text class="status-option-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 标题输入 -->
   <view class="input-section card">
     <input
       class="title-input"
-      placeholder="标题（选填）"
+      placeholder="潜点标题（选填）"
       placeholder-style="color: #ccc;"
       value="{{title}}"
       bindinput="onTitleInput"
@@ -77,7 +106,7 @@
     <!-- 正文输入 -->
     <textarea
       class="content-input"
-      placeholder="记录今天的心情和故事..."
+      placeholder="记录今天看到的海洋生物、能见度、心情和故事..."
       placeholder-style="color: #ccc;"
       value="{{content}}"
       bindinput="onContentInput"
@@ -92,7 +121,7 @@
   <!-- 图片区域 -->
   <view class="media-section card">
     <view class="media-header">
-      <text class="media-title">📷 图片</text>
+      <text class="media-title">📷 海底照片</text>
       <text class="media-count">{{images.length}}/9</text>
     </view>
     <view class="media-grid">
@@ -126,7 +155,7 @@
   <!-- 视频区域 -->
   <view class="media-section card">
     <view class="media-header">
-      <text class="media-title">🎬 视频</text>
+      <text class="media-title">🎬 潜水视频</text>
       <text class="media-count">{{videos.length}}/3</text>
     </view>
     <view class="media-grid">
@@ -162,7 +191,7 @@
   <view class="bottom-actions">
     <view class="btn-cancel" bindtap="onBack">取消</view>
     <view class="btn-save {{isSaving ? 'disabled' : ''}}" bindtap="saveDiary">
-      {{isSaving ? '保存中...' : '保存日记'}}
+      {{isSaving ? '保存中...' : '保存潜水日志'}}
     </view>
   </view>
 </view>

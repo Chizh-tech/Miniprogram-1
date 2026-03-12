@@ -3,6 +3,24 @@ const storage = require('../../utils/storage');
 const weatherService = require('../../utils/weather');
 const locationService = require('../../utils/location');
 
+const OCEAN_ANIMALS = [
+  { icon: '🐬', name: '海豚', tip: '保持轻盈呼吸，今天也会有惊喜。' },
+  { icon: '🐢', name: '海龟', tip: '慢一点记录，回忆会更清晰。' },
+  { icon: '🐠', name: '热带鱼', tip: '把今天最闪光的细节写下来。' },
+  { icon: '🐙', name: '章鱼', tip: '多一点观察，故事会更立体。' },
+  { icon: '🦑', name: '鱿鱼', tip: '灵感来了就先记下，不用等完美。' },
+  { icon: '🦀', name: '小螃蟹', tip: '记录一个小情绪，也很重要。' },
+  { icon: '🦈', name: '鲨鱼', tip: '勇敢一点，写下今天的挑战。' },
+  { icon: '🐳', name: '鲸鱼', tip: '留给自己一段深呼吸的文字。' }
+];
+
+const DIVE_STATUS_OPTIONS = [
+  { value: 'want', label: '想去潜水', icon: '○', className: 'status-want' },
+  { value: 'depart', label: '出发潜水', icon: '▲', className: 'status-depart' },
+  { value: 'diving', label: '正在潜水', icon: '●', className: 'status-diving' },
+  { value: 'return', label: '潜水归来', icon: '★', className: 'status-return' }
+];
+
 Page({
   data: {
     date: '',
@@ -10,6 +28,8 @@ Page({
     weekday: '',
     title: '',
     content: '',
+    diveStatus: 'want',
+    diveStatusOptions: DIVE_STATUS_OPTIONS,
     images: [],
     videos: [],
     imagePreviewUrls: [],
@@ -21,6 +41,8 @@ Page({
     isExistingDiary: false,
     isSaving: false,
     showDebugPanel: false,
+    showOceanAnimalPopup: false,
+    randomOceanAnimal: null,
     debugInfo: {
       lastRefreshAt: '-',
       locationPermission: '未知',
@@ -54,6 +76,8 @@ Page({
     this.setData({
       date,
       dateDisplay,
+      randomOceanAnimal: this.pickRandomOceanAnimal(),
+      showOceanAnimalPopup: true,
       'debugInfo.hasWeatherKey': !!weatherService.__DEBUG_HAS_WEATHER_KEY__,
       'debugInfo.hasTencentMapKey': !!locationService.__DEBUG_HAS_MAP_KEY__
     });
@@ -66,6 +90,7 @@ Page({
       this.setData({
         title: existing.title || '',
         content: existing.content || '',
+        diveStatus: existing.diveStatus || 'want',
         images: existing.images || [],
         videos: existing.videos || [],
         location: existing.location || null,
@@ -124,7 +149,7 @@ Page({
 
   onShow() {
     wx.setNavigationBarTitle({
-      title: this.data.isExistingDiary ? '编辑日记' : '写日记'
+      title: this.data.isExistingDiary ? '编辑潜水日志' : '记录潜水日志'
     });
 
     this.refreshLocationPermission();
@@ -133,6 +158,17 @@ Page({
   toggleDebugPanel() {
     this.setData({ showDebugPanel: !this.data.showDebugPanel });
   },
+
+  pickRandomOceanAnimal() {
+    const index = Math.floor(Math.random() * OCEAN_ANIMALS.length);
+    return OCEAN_ANIMALS[index];
+  },
+
+  closeOceanAnimalPopup() {
+    this.setData({ showOceanAnimalPopup: false });
+  },
+
+  preventPopupClose() {},
 
   refreshLocationPermission() {
     wx.getSetting({
@@ -263,6 +299,12 @@ Page({
    */
   onContentInput(e) {
     this.setData({ content: e.detail.value });
+  },
+
+  onDiveStatusSelect(e) {
+    const { value } = e.currentTarget.dataset;
+    if (!value) return;
+    this.setData({ diveStatus: value });
   },
 
   /**
@@ -489,10 +531,10 @@ Page({
    * 保存日记
    */
   async saveDiary() {
-    const { date, title, content, images, videos, location, weather } = this.data;
+    const { date, title, content, diveStatus, images, videos, location, weather } = this.data;
 
     if (!content.trim() && !title.trim() && images.length === 0 && videos.length === 0) {
-      wx.showToast({ title: '日记内容不能为空', icon: 'none' });
+      wx.showToast({ title: '还没记录潜水内容', icon: 'none' });
       return;
     }
 
@@ -504,6 +546,7 @@ Page({
       date,
       title: title.trim(),
       content: content.trim(),
+      diveStatus: diveStatus || 'want',
       images,
       videos,
       location,

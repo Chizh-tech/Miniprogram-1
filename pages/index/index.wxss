@@ -1,7 +1,18 @@
 .page {
   min-height: 100vh;
-  background-color: #F5F5F5;
+  background: linear-gradient(180deg, #062f57 0%, #0a517b 34%, #14829b 100%);
   padding-bottom: 40rpx;
+  position: relative;
+}
+
+.ocean-glow {
+  position: absolute;
+  right: -60rpx;
+  top: 110rpx;
+  width: 260rpx;
+  height: 260rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(135, 233, 255, 0.42), rgba(135, 233, 255, 0));
 }
 
 /* 顶部工具栏 */
@@ -10,12 +21,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 20rpx 24rpx;
-  background-color: #4A90E2;
+  background: rgba(4, 29, 57, 0.62);
+  backdrop-filter: blur(4rpx);
 }
 
 .view-tabs {
   display: flex;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.14);
   border-radius: 24rpx;
   overflow: hidden;
 }
@@ -28,8 +40,8 @@
 }
 
 .tab-item.active {
-  background-color: #fff;
-  color: #4A90E2;
+  background-color: #c5f3ff;
+  color: #0a5d8f;
   font-weight: 500;
   border-radius: 24rpx;
 }
@@ -37,7 +49,7 @@
 .create-btn {
   padding: 14rpx 28rpx;
   background-color: #fff;
-  color: #4A90E2;
+  color: #0a5d8f;
   border-radius: 30rpx;
   font-size: 26rpx;
   font-weight: 500;
@@ -48,8 +60,8 @@
   margin: 20rpx 24rpx;
   padding: 24rpx;
   border-radius: 20rpx;
-  background: #fff;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.2);
 }
 
 /* 月份导航 */
@@ -67,7 +79,7 @@
   align-items: center;
   justify-content: center;
   font-size: 48rpx;
-  color: #4A90E2;
+  color: #0d7db8;
   font-weight: 300;
 }
 
@@ -82,8 +94,8 @@
 
 .today-btn {
   font-size: 22rpx;
-  color: #4A90E2;
-  border: 1rpx solid #4A90E2;
+  color: #0d7db8;
+  border: 1rpx solid #0d7db8;
   padding: 4rpx 14rpx;
   border-radius: 16rpx;
   font-weight: normal;
@@ -93,6 +105,59 @@
 .week-header {
   display: flex;
   margin-bottom: 12rpx;
+}
+
+.status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  border: 1rpx solid transparent;
+}
+
+.legend-icon {
+  font-size: 20rpx;
+}
+
+.legend-label {
+  font-size: 20rpx;
+}
+
+.status-detail-box {
+  background: #f4fbff;
+  border-radius: 12rpx;
+  padding: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.status-detail-title {
+  font-size: 22rpx;
+  color: #356b87;
+  margin-bottom: 8rpx;
+}
+
+.status-detail-item {
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+  margin-bottom: 6rpx;
+}
+
+.status-detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.status-detail-text {
+  font-size: 22rpx;
+  font-weight: 500;
 }
 
 .week-cell {
@@ -120,6 +185,22 @@
   border-radius: 50%;
 }
 
+.day-status {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  margin-top: 5rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-status-icon {
+  font-size: 14rpx;
+  color: #fff;
+  line-height: 1;
+}
+
 .day-cell.empty {
   pointer-events: none;
 }
@@ -131,39 +212,112 @@
 }
 
 .day-cell.today .day-num {
-  color: #4A90E2;
+  color: #0d7db8;
   font-weight: 700;
 }
 
 .day-cell.today {
-  background-color: #EEF4FE;
+  background-color: #dff4ff;
   border-radius: 50%;
 }
 
 .day-cell.selected {
-  background-color: #4A90E2;
+  background-color: #eef7ff;
+  border: 2rpx solid #7ab6da;
   border-radius: 50%;
 }
 
 .day-cell.selected .day-num {
-  color: #fff;
+  color: #0d7db8;
   font-weight: 700;
 }
 
 .day-cell.has-diary .day-num {
-  color: #4A90E2;
+  color: #0d7db8;
 }
 
-.diary-dot {
-  width: 8rpx;
-  height: 8rpx;
-  background-color: #4A90E2;
-  border-radius: 50%;
-  margin-top: 4rpx;
+.day-cell.status-want .day-num {
+  color: #2092d1;
 }
 
-.day-cell.selected .diary-dot {
-  background-color: #fff;
+.day-cell.status-depart .day-num {
+  color: #d4861e;
+}
+
+.day-cell.status-diving .day-num {
+  color: #2f9a63;
+}
+
+.day-cell.status-return .day-num {
+  color: #9256c9;
+}
+
+.day-cell.selected.status-want .day-num {
+  color: #2092d1;
+}
+
+.day-cell.selected.status-depart .day-num {
+  color: #d4861e;
+}
+
+.day-cell.selected.status-diving .day-num {
+  color: #2f9a63;
+}
+
+.day-cell.selected.status-return .day-num {
+  color: #9256c9;
+}
+
+.status-default {
+  background: #7ea7be;
+}
+
+.status-want {
+  color: #2092d1;
+  background: #e8f7ff;
+  border-color: #2092d1;
+}
+
+.status-depart {
+  color: #d4861e;
+  background: #fff4dd;
+  border-color: #d4861e;
+}
+
+.status-diving {
+  color: #2f9a63;
+  background: #e9f7ef;
+  border-color: #2f9a63;
+}
+
+.status-return {
+  color: #9256c9;
+  background: #f7ecff;
+  border-color: #9256c9;
+}
+
+.day-status.status-want {
+  background: #2092d1;
+}
+
+.day-status.status-depart {
+  background: #d4861e;
+}
+
+.day-status.status-diving {
+  background: #2f9a63;
+}
+
+.day-status.status-return {
+  background: #9256c9;
+}
+
+.day-cell.selected .day-status {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.day-cell.selected .day-status-icon {
+  color: #0d7db8;
 }
 
 .month-summary {
@@ -191,7 +345,7 @@
 
 /* 日记卡片 */
 .diary-card {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 16rpx;
@@ -211,7 +365,7 @@
   justify-content: center;
   width: 80rpx;
   min-width: 80rpx;
-  background: #EEF4FE;
+  background: #dff4ff;
   border-radius: 12rpx;
   padding: 8rpx;
   margin-right: 20rpx;
@@ -220,7 +374,7 @@
 .diary-day {
   font-size: 36rpx;
   font-weight: 700;
-  color: #4A90E2;
+  color: #0d7db8;
   line-height: 1.1;
 }
 
@@ -246,6 +400,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8rpx;
+}
+
+.status-tag {
+  border: 1rpx solid transparent;
 }
 
 .diary-arrow {
@@ -295,7 +453,7 @@
 .empty-create-btn {
   margin-top: 16rpx;
   padding: 20rpx 48rpx;
-  background: #4A90E2;
+  background: linear-gradient(90deg, #1aa5c5, #0d7db8);
   color: #fff;
   border-radius: 40rpx;
   font-size: 28rpx;
